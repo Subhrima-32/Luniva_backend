@@ -1,66 +1,58 @@
-import React, { useState } from "react";
-import axios from "axios";
+import express from "express";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 
-// Use environment variable first, fallback to localhost
-const API = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+const router = express.Router();
 
-const AuthPage = () => {
-  const [isLogin, setIsLogin] = useState(true);
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
+// REGISTER
+router.post("/register", async (req, res) => {
+  try {
+    const { fullName, email, password } = req.body;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (isLogin) {
-        const res = await axios.post(`${API}/api/auth/login`, { email, password });
-        setMessage(`Login successful: ${res.data.message}`);
-      } else {
-        const res = await axios.post(`${API}/api/auth/register`, { fullName, email, password });
-        setMessage(`Register successful: ${res.data.message}`);
-      }
-    } catch (err) {
-      setMessage(err.response?.data?.message || "Something went wrong");
-    }
-  };
+    // Check if user exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) return res.status(400).json({ message: "User already exists" });
 
-  return (
-    <div className="auth-container">
-      <h2>{isLogin ? "Login" : "Register"}</h2>
-      <form onSubmit={handleSubmit}>
-        {!isLogin && (
-          <input
-            type="text"
-            placeholder="Full Name"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            required
-          />
-        )}
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <button type="submit">{isLogin ? "Login" : "Register"}</button>
-      </form>
-      <p onClick={() => setIsLogin(!isLogin)} style={{ cursor: "pointer" }}>
-        {isLogin ? "Don't have an account? Register" : "Already have an account? Login"}
-      </p>
-      {message && <p>{message}</p>}
-    </div>
-  );
-};
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-export default AuthPage;
+    // Save new user
+    const newUser = new User({ fullName, email, password: hashedPassword });
+    await newUser.save();
+
+    res.status(201).json({ message: "User registered successfully", user: newUser });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// LOGIN
+router.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: "Invalid credentials" });
+
+    // Compare password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+
+    // JWT token
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+
+    res.json({
+      message: "Login successful",
+      token,
+      user: { id: user._id, fullName: user.fullName, email: user.email },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+export default router;
