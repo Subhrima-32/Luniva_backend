@@ -1,25 +1,24 @@
-import express from "express";
-import mongoose from "mongoose";
-import dotenv from "dotenv";
-import cors from "cors";
-import authRoutes from "./routes/auth.js"; // adjust path if different
+// server.js (CommonJS version)
 
-dotenv.config();
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+require("dotenv").config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// ✅ Default route to check server status
+// Routes
 app.get("/", (req, res) => {
-  res.send("🚀 Luniva Backend is running successfully!");
+  res.send("🚀 Luniva Backend is running...");
 });
 
-// Routes
-app.use("/api/auth", authRoutes);
+// Example Auth Routes (if you have them in separate files)
+// const authRoutes = require("./routes/auth");
+// app.use("/api/auth", authRoutes);
 
 // MongoDB Connection
 mongoose
@@ -27,8 +26,9 @@ mongoose
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
-  .then(() => {
-    console.log("✅ MongoDB connected");
-    app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
-  })
+  .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
+
+// Server Listener
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
