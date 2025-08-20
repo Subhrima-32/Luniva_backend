@@ -1,50 +1,109 @@
-const express = require("express");
-const router = express.Router();
+// src/components/AuthPage.js
+import React, { useState } from "react";
+import axios from "axios";
 
-// ✅ Login route
-router.post("/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
+// ✅ API URL comes from env var (Vercel compatible)
+// If not set, fallback to localhost for local dev
+const API_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
 
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required" });
+const AuthPage = () => {
+  const [isLogin, setIsLogin] = useState(true);
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    password: "",
+  });
+  const [message, setMessage] = useState("");
+
+  // Handle form input change
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  // Login API call
+  const handleLogin = async () => {
+    try {
+      const res = await axios.post(`${API_URL}/api/auth/login`, {
+        email: formData.email,
+        password: formData.password,
+      });
+      setMessage(`✅ Login successful! Welcome ${res.data.fullName}`);
+    } catch (err) {
+      setMessage("❌ Login failed. Check credentials.");
     }
+  };
 
-    // Fake demo login
-    res.json({
-      message: "Login successful",
-      user: {
-        id: "demo123",
-        fullName: "Demo User",
-        email
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-});
-
-// ✅ Register route
-router.post("/register", async (req, res) => {
-  try {
-    const { fullName, email, password } = req.body;
-
-    if (!fullName || !email || !password) {
-      return res.status(400).json({ message: "All fields are required" });
+  // Register API call
+  const handleRegister = async () => {
+    try {
+      const res = await axios.post(`${API_URL}/api/auth/register`, {
+        fullName: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+      });
+      setMessage(`✅ Registered successfully! Welcome ${res.data.fullName}`);
+    } catch (err) {
+      setMessage("❌ Registration failed. Try again.");
     }
+  };
 
-    // Fake demo registration
-    res.json({
-      message: "Registration successful",
-      user: {
-        id: "newUser123",
-        fullName,
-        email
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-});
+  // Submit handler
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (isLogin) {
+      handleLogin();
+    } else {
+      handleRegister();
+    }
+  };
 
-module.exports = router;
+  return (
+    <div className="auth-container">
+      <h2>{isLogin ? "Login" : "Register"}</h2>
+
+      <form onSubmit={handleSubmit}>
+        {!isLogin && (
+          <input
+            type="text"
+            name="fullName"
+            placeholder="Full Name"
+            value={formData.fullName}
+            onChange={handleChange}
+            required
+          />
+        )}
+
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          value={formData.email}
+          onChange={handleChange}
+          required
+        />
+
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          value={formData.password}
+          onChange={handleChange}
+          required
+        />
+
+        <button type="submit">{isLogin ? "Login" : "Register"}</button>
+      </form>
+
+      <p>
+        {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+        <button onClick={() => setIsLogin(!isLogin)}>
+          {isLogin ? "Register" : "Login"}
+        </button>
+      </p>
+
+      {message && <p>{message}</p>}
+    </div>
+  );
+};
+
+export default AuthPage;
