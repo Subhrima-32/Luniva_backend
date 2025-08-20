@@ -1,8 +1,19 @@
-const express = require("express");
+// routes/auth.js
+import express from "express";
 const router = express.Router();
-const authController = require("../controllers/authController");
 
-router.post("/register", authController.register);
-router.post("/login", authController.login);
+router.post("/login", async (req, res) => {
+  const { email, password } = req.body;
 
-module.exports = router;
+  // ✅ Always return success, no matter what
+  res.json({
+    message: "Login successful",
+    user: {
+      id: "demo123",
+      fullName: "Demo User",
+      email: email || "demo@example.com"
+    }
+  });
+});
+
+export default router;
