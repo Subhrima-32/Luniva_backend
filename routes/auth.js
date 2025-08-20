@@ -1,33 +1,63 @@
-// routes/auth.js
-const express = require("express");
-const router = express.Router();
+import axios from "axios";
+import React, { useState } from "react";
 
-// ✅ Fake login route - accepts ANY email + password
-router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+const API = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
 
-  res.json({
-    message: "Login successful",
-    user: {
-      id: "demo123",
-      fullName: "Demo User",
-      email: email || "demo@example.com"
+function AuthPage() {
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleRegister = async () => {
+    try {
+      const res = await axios.post(`${API}/api/auth/register`, {
+        fullName,
+        email,
+        password,
+      });
+      console.log("✅ Register success:", res.data);
+    } catch (err) {
+      console.error("❌ Register error:", err.response?.data || err.message);
     }
-  });
-});
+  };
 
-// ✅ Fake register route - always "creates" a user
-router.post("/register", async (req, res) => {
-  const { fullName, email, password } = req.body;
-
-  res.json({
-    message: "Registration successful",
-    user: {
-      id: "newUser123",
-      fullName: fullName || "Demo User",
-      email: email || "demo@example.com"
+  const handleLogin = async () => {
+    try {
+      const res = await axios.post(`${API}/api/auth/login`, {
+        email,
+        password,
+      });
+      console.log("✅ Login success:", res.data);
+    } catch (err) {
+      console.error("❌ Login error:", err.response?.data || err.message);
     }
-  });
-});
+  };
 
-module.exports = router;
+  return (
+    <div>
+      <h2>Auth Page</h2>
+      <input
+        type="text"
+        placeholder="Full Name (for register)"
+        value={fullName}
+        onChange={(e) => setFullName(e.target.value)}
+      />
+      <input
+        type="email"
+        placeholder="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+      <input
+        type="password"
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+      <button onClick={handleLogin}>Login</button>
+      <button onClick={handleRegister}>Register</button>
+    </div>
+  );
+}
+
+export default AuthPage;

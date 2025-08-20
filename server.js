@@ -6,7 +6,16 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const app = express();
-app.use(cors());
+
+// ✅ Configure CORS properly
+app.use(cors({
+  origin: [
+    "http://localhost:3000",             // Local dev
+    "https://luniva-frontend.vercel.app" // Replace with your actual Vercel domain
+  ],
+  credentials: true
+}));
+
 app.use(express.json());
 
 // Routes
